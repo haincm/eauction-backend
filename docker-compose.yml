@@ -1,0 +1,106 @@
+version: "3.7"
+services:
+  eureka:
+    build: ./eureka
+    restart: always
+    ports:
+      - "8761:8761"
+    networks:
+      - eauction_merge_net
+  eauction-query:
+    build: ./eauction-query
+    restart: always
+    ports:
+      - 8081:8081
+    depends_on:
+      - eureka
+      - mongo_db
+      - kafka
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka
+    networks:
+      - eauction_merge_net
+  eauction-command:
+    build: ./command-service
+    restart: always
+    ports:
+      - 8082:8082
+    depends_on:
+      - eureka
+      - mysql_db
+      - kafka
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka
+    networks:
+      - eauction_merge_net
+  mongo_db:
+    image: "mongo:4.4.3"
+    restart: always
+    ports:
+      - 27017:27017
+  mysql_db:
+    image: "mysql:8.0"
+    restart: always
+    ports:
+      - 3307:3306
+    environment:
+      MYSQL_DATABASE: eauction
+      MYSQL_USER: test
+      MYSQL_PASSWORD: test
+      MYSQL_ROOT_PASSWORD: root@123
+  api-gateway-zuul:
+    build: ./api-gateway-zuul
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka
+      - eauction-command
+      - eauction-query
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka
+      OKTA_OAUTH2_ISSUER: https://dev-61851708.okta.com/oauth2/default
+      OKTA_OAUTH2_CLIENT_ID: 0oa5s4s4vkpSMjGtQ5d7
+    networks:
+      - eauction_merge_net
+  zookeeper:
+    container_name:
+      zookeeper_merge
+    image:
+      wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+    networks:
+      - eauction_merge_net
+  kafka:
+    container_name:
+      kafka_merge
+    image:
+      wurstmeister/kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+#      KAFKA_LISTENERS: PLAINTEXT://:9092
+#      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+#      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+#      ZK_SERVER: zookeeper:2181
+#      ADVERTISED_HOST: localhost
+#      CONSUMER_THREADS: 5
+#      BROKER_ID: 1
+#      ADVERTISED_PORT: 9092
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - eauction_merge_net
+networks:
+  eauction_merge_net:
+    driver: bridge

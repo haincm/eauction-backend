@@ -1,0 +1,5 @@
+com\mycompany\gateway\rest\CallbackController.class
+com\mycompany\gateway\security\CorsConfig.class
+com\mycompany\gateway\security\Config.class
+com\mycompany\gateway\config\RequestLoggingFilterConfig.class
+com\mycompany\gateway\GatewayApplication.class

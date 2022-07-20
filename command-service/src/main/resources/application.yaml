@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: eauction-command
+okta:
+  oauth2:
+    issuer: https://dev-61851708.okta.com/oauth2/default
+    audience: api://default
+server:
+  forward-headers-strategy: framework
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URI:http://host.docker.internal:8761/eureka}
